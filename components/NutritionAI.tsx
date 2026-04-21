@@ -239,16 +239,27 @@ const NutritionAI: React.FC<NutritionAIProps> = ({ addToCart, user }) => {
              
              {/* Recommended Items Display */}
              {recommendedItems.length > 0 && (
-                 <div className="bg-white/5 rounded-xl p-6 border border-white/5">
+                 <div className="bg-white/5 rounded-xl p-6 border border-white/5 mt-6">
                      <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Curated Selection</h4>
-                     <div className="space-y-3 mb-6">
+                     <div className="space-y-4 mb-6">
                          {recommendedItems.map(item => (
-                             <div key={item.id} className="flex justify-between items-center border-b border-white/10 pb-2 last:border-0">
-                                 <div>
-                                     <p className="text-white font-bold">{item.name}</p>
-                                     <p className="text-xs text-gray-500">{item.category} • {item.calories} kcal</p>
+                             <div 
+                                key={item.id} 
+                                onClick={() => setViewingItem(item)}
+                                className="flex flex-col md:flex-row justify-between items-start md:items-center bg-black/40 hover:bg-black/60 p-4 rounded-lg border border-white/10 hover:border-luxury-gold/50 cursor-pointer transition-all group"
+                             >
+                                 <div className="flex gap-4 items-center w-full md:w-auto">
+                                     <img src={item.imageUrl} alt={item.name} className="w-16 h-16 object-cover rounded-md border border-white/10 group-hover:border-luxury-gold/50 transition-colors" />
+                                     <div className="flex-1">
+                                         <p className="text-luxury-gold text-[10px] uppercase font-bold tracking-widest mb-1">{item.category}</p>
+                                         <p className="text-white font-bold text-sm md:text-base">{item.name}</p>
+                                         <p className="text-xs text-gray-400 mt-1 line-clamp-1">{item.description}</p>
+                                     </div>
                                  </div>
-                                 <span className="text-luxury-gold font-mono">${item.price}</span>
+                                 <div className="mt-3 md:mt-0 flex items-center justify-between w-full md:w-auto md:flex-col md:items-end">
+                                    <span className="text-luxury-gold font-mono text-lg">${item.price}</span>
+                                    <span className="text-[10px] text-gray-500 uppercase tracking-widest mt-1 group-hover:text-luxury-gold transition-colors">View Details</span>
+                                 </div>
                              </div>
                          ))}
                      </div>
