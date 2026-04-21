@@ -1,0 +1,9 @@
+{
+  "name": "SmartGuest AI Ecosystem (SHEE)",
+  "description": "A luxury hospitality platform integrating AI-driven wellness, nutrition, fitness, and concierge services for VIP guests.",
+  "requestFramePermissions": [
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": []
+}
