@@ -12,7 +12,7 @@ import SpaWellness from './components/SpaWellness';
 import WeatherWidget from './components/WeatherWidget';
 import NavigationModule from './components/NavigationModule';
 import GuestExperiences from './components/GuestExperiences';
-import { MOCK_USER, MOCK_INVENTORY, TECH_AMENITIES } from './constants';
+import { MOCK_USER, MOCK_INVENTORY, TECH_AMENITIES, MOCK_STAFF } from './constants';
 import { CartItem, UserTier, Transaction, UserProfile, UserRole, AppFeatures, InventoryItem, SymptomLogEntry, Excursion, TechAmenity } from './types';
 
 // Helper to safely load cart from storage
@@ -722,7 +722,7 @@ const App: React.FC = () => {
       case 'dashboard':
         return <Dashboard cart={cart} history={history} user={currentUser} commissionRate={commissionRate} symptomLogs={symptomLogs} updateUserProfile={updateUserProfile} />;
       case 'experiences':
-        return <GuestExperiences excursions={excursions} techRentals={techRentals} addToCart={addToCart} />;
+        return <GuestExperiences excursions={excursions} techRentals={techRentals} staff={MOCK_STAFF} addToCart={addToCart} />;
       case 'booking':
         return <RoomBooking addToCart={addToCart} />;
       case 'nutrition':

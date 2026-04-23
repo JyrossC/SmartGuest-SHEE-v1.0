@@ -1243,7 +1243,7 @@ const StaffView: React.FC<DashboardProps> = ({ user, history, markTaskComplete, 
         if (user.role === UserRole.CHEF && item.type === 'Food') isRelevant = true;
         if (user.role === UserRole.TRAINER && item.type === 'Service' && (item.name.includes('Gym') || item.name.includes('Trainer') || item.name.includes('Yoga'))) isRelevant = true;
         if (user.role === UserRole.SPA_MANAGER && item.type === 'Service' && (item.name.includes('Spa') || item.name.includes('Massage'))) isRelevant = true;
-        if (user.role === UserRole.CONCIERGE && item.type === 'Service' && (item.name.includes('Tour') || item.name.includes('Towel') || item.name.includes('Cleaning') || item.name.includes('Rental'))) isRelevant = true; // Added Rental
+        if (user.role === UserRole.CONCIERGE && item.type === 'Service' && (item.name.includes('Tour') || item.name.includes('Towel') || item.name.includes('Cleaning') || item.name.includes('Rental') || item.name.includes('Concierge'))) isRelevant = true;
         
         // Status Logic
         const isCompleted = item.status === 'Completed';

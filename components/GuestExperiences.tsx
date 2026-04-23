@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
-import { Excursion, TechAmenity, CartItem } from '../types';
+import { Excursion, TechAmenity, CartItem, StaffMember, UserRole } from '../types';
 
 interface GuestExperiencesProps {
   excursions: Excursion[];
   techRentals: TechAmenity[];
+  staff: StaffMember[];
   addToCart: (item: CartItem) => void;
 }
 
-const GuestExperiences: React.FC<GuestExperiencesProps> = ({ excursions, techRentals, addToCart }) => {
-  const [activeTab, setActiveTab] = useState<'excursions' | 'tech'>('excursions');
+const GuestExperiences: React.FC<GuestExperiencesProps> = ({ excursions, techRentals, staff, addToCart }) => {
+  const [activeTab, setActiveTab] = useState<'excursions' | 'tech' | 'concierges'>('excursions');
 
   return (
     <div className="space-y-8 animate-fade-in">
       <header className="mb-12">
-        <h2 className="font-serif text-4xl text-white mb-2">Experiences & Rentals</h2>
-        <p className="text-gray-400 max-w-2xl text-lg">Curate your perfect stay with our selected daily tours or enhance your rest with state-of-the-art wellness tech.</p>
+        <h2 className="font-serif text-4xl text-white mb-2">Experiences & Services</h2>
+        <p className="text-gray-400 max-w-2xl text-lg">Curate your perfect stay with our selected daily tours, exclusive tech, or book a consultation with our concierges.</p>
         
-        <div className="flex bg-white/5 p-1 rounded-lg border border-white/5 mt-6 w-fit">
+        <div className="flex flex-wrap bg-white/5 p-1 rounded-lg border border-white/5 mt-6 w-fit gap-1">
             <button 
                 onClick={() => setActiveTab('excursions')}
                 className={`px-6 py-2 rounded text-xs font-bold uppercase tracking-wider transition-colors ${activeTab === 'excursions' ? 'bg-luxury-gold text-black' : 'text-gray-400 hover:text-white'}`}
@@ -28,6 +29,12 @@ const GuestExperiences: React.FC<GuestExperiencesProps> = ({ excursions, techRen
                 className={`px-6 py-2 rounded text-xs font-bold uppercase tracking-wider transition-colors ${activeTab === 'tech' ? 'bg-luxury-gold text-black' : 'text-gray-400 hover:text-white'}`}
             >
                 Wellness Tech
+            </button>
+            <button 
+                onClick={() => setActiveTab('concierges')}
+                className={`px-6 py-2 rounded text-xs font-bold uppercase tracking-wider transition-colors ${activeTab === 'concierges' ? 'bg-luxury-gold text-black' : 'text-gray-400 hover:text-white'}`}
+            >
+                Our Concierges
             </button>
         </div>
       </header>
@@ -116,6 +123,51 @@ const GuestExperiences: React.FC<GuestExperiencesProps> = ({ excursions, techRen
                                       {isAvailable ? 'Add to Cart' : 'Unavailable'}
                                   </button>
                               </div>
+                          </div>
+                      </div>
+                  );
+              })}
+          </div>
+      )}
+
+      {activeTab === 'concierges' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {staff.filter(s => s.role === UserRole.CONCIERGE).map(concierge => {
+                  const isOnline = concierge.status === 'Online';
+                  return (
+                      <div key={concierge.id} className="bg-luxury-charcoal border border-white/5 rounded-2xl p-6 hover:border-luxury-gold/30 transition-all flex flex-col relative overflow-hidden group">
+                          <div className="flex items-center gap-4 mb-4">
+                              <div className="w-16 h-16 rounded-full bg-black flex items-center justify-center text-2xl shadow-lg border border-white/10">
+                                  🛎️
+                              </div>
+                              <div>
+                                  <h3 className="text-lg font-bold text-white">{concierge.name}</h3>
+                                  <p className="text-xs text-gray-400 uppercase tracking-widest">{concierge.department}</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                      <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-gray-500'}`}></div>
+                                      <span className="text-xs text-gray-400">{concierge.status}</span>
+                                  </div>
+                              </div>
+                          </div>
+                          
+                          <p className="text-sm text-gray-400 mb-6 flex-1 pr-4">
+                              Available for personalized itinerary planning, local booking assistance, and special requests.
+                          </p>
+                          
+                          <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
+                              <span className="text-lg font-serif text-white">Consultation</span>
+                              <button 
+                                  onClick={() => addToCart({
+                                      id: `concierge_${concierge.id}_${Date.now()}`,
+                                      name: `Concierge Consultation`,
+                                      price: 0,
+                                      type: 'Service',
+                                      details: `Requested with ${concierge.name}`
+                                  })}
+                                  className="bg-white/10 hover:bg-luxury-gold hover:text-black text-white px-6 py-2 rounded font-bold uppercase tracking-widest transition-all text-xs border border-white/10 hover:border-transparent"
+                              >
+                                  Request
+                              </button>
                           </div>
                       </div>
                   );

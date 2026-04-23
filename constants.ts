@@ -55,7 +55,9 @@ export const MOCK_STAFF: StaffMember[] = [
     { id: 'st1', name: 'Gordon Ramsay', role: UserRole.CHEF, email: 'chef@shee.com', phone: '+255 700 111 222', status: 'Online', department: 'Kitchen', shift: 'Evening' },
     { id: 'st2', name: 'Mike Tyson', role: UserRole.TRAINER, email: 'gym@shee.com', phone: '+255 700 333 444', status: 'Online', department: 'Wellness', shift: 'Morning' },
     { id: 'st3', name: 'Alice Walker', role: UserRole.SPA_MANAGER, email: 'spa@shee.com', phone: '+255 700 555 666', status: 'Away', department: 'Spa', shift: 'Morning' },
-    { id: 'st4', name: 'John Wick', role: UserRole.CONCIERGE, email: 'frontdesk@shee.com', phone: '+255 700 777 888', status: 'Offline', department: 'Front Office', shift: 'Night' }
+    { id: 'st4', name: 'James Carter', role: UserRole.CONCIERGE, email: 'james@shee.com', phone: '+255 700 777 888', status: 'Online', department: 'Front Office', shift: 'Morning' },
+    { id: 'st5', name: 'Elena Rossi', role: UserRole.CONCIERGE, email: 'elena@shee.com', phone: '+255 700 777 889', status: 'Online', department: 'Front Office', shift: 'Evening' },
+    { id: 'st6', name: 'John Wick', role: UserRole.CONCIERGE, email: 'john@shee.com', phone: '+255 700 777 890', status: 'Offline', department: 'Front Office', shift: 'Night' }
 ];
 
 export const MENU_ITEMS: MenuItem[] = [
