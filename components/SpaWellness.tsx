@@ -17,6 +17,7 @@ const SpaWellness: React.FC<SpaWellnessProps> = ({ addToCart, isDND, onLogSympto
   const [loading, setLoading] = useState(false);
   const [locationTier, setLocationTier] = useState<LocationTier>(LocationTier.STANDARD);
   const [isReasoningExpanded, setIsReasoningExpanded] = useState(false);
+  const [viewingTreatment, setViewingTreatment] = useState<SpaTreatment | null>(null);
 
   // Persistence for Location Tier
   useEffect(() => {
@@ -234,23 +235,75 @@ const SpaWellness: React.FC<SpaWellnessProps> = ({ addToCart, isDND, onLogSympto
                 {/* Treatment List */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {SPA_TREATMENTS.map(t => (
-                        <div key={t.id} className="bg-luxury-charcoal p-6 rounded-xl border border-white/5 hover:border-luxury-gold/30 transition-all group flex flex-col">
+                        <div 
+                          key={t.id} 
+                          onClick={() => setViewingTreatment(t)}
+                          className="bg-luxury-charcoal p-6 rounded-xl border border-white/5 hover:border-luxury-gold/30 transition-all group flex flex-col cursor-pointer"
+                        >
                             <div className="flex justify-between items-start mb-2">
                                 <h4 className="text-xl font-serif text-white group-hover:text-luxury-gold transition-colors">{t.name}</h4>
                                 <span className="font-mono text-luxury-gold text-lg">${getPrice(t.price).toFixed(0)}</span>
                             </div>
-                            <p className="text-sm text-gray-400 mb-4 h-12">{t.description}</p>
+                            <p className="text-sm text-gray-400 mb-4 line-clamp-2">{t.description}</p>
                             <div className="mt-auto flex justify-between items-center pt-4 border-t border-white/5">
                                 <span className="text-xs text-gray-500">{t.durationMin} mins</span>
-                                <button 
-                                    onClick={() => bookTreatment(t)}
-                                    className="text-xs uppercase tracking-widest border border-white/10 px-4 py-2 rounded hover:bg-luxury-gold hover:text-black hover:border-luxury-gold transition-colors"
-                                >
-                                    Book {locationTier === LocationTier.STANDARD ? 'Standard' : locationTier === LocationTier.IN_ROOM ? 'In-Room' : 'Private'}
-                                </button>
+                                <span className="text-xs uppercase tracking-widest text-luxury-gold group-hover:text-white transition-colors">View Details</span>
                             </div>
                         </div>
                     ))}
+                </div>
+            </div>
+        )}
+
+        {/* Treatment Detail Modal/View */}
+        {viewingTreatment && activeSection === 'treatments' && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+                <div className="bg-luxury-charcoal rounded-2xl border border-white/10 shadow-2xl max-w-2xl w-full p-8 relative">
+                    <button 
+                        onClick={() => setViewingTreatment(null)}
+                        className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl leading-none"
+                    >
+                        &times;
+                    </button>
+                    
+                    <div className="mb-6">
+                        <span className="bg-luxury-gold text-black px-3 py-1 rounded text-[10px] font-bold uppercase tracking-widest mb-3 inline-block">
+                             Spa Treatment
+                        </span>
+                        <h2 className="text-3xl font-serif text-white mb-2">{viewingTreatment.name}</h2>
+                        <div className="flex items-center gap-4 text-xs text-gray-400">
+                             <span className="flex items-center gap-1">⏱ {viewingTreatment.durationMin} mins</span>
+                             <span className="flex items-center gap-1">🏷 {viewingTreatment.tags.join(', ')}</span>
+                        </div>
+                    </div>
+                    
+                    <p className="text-gray-300 text-lg leading-relaxed mb-8 border-l-2 border-luxury-gold/50 pl-4">
+                        {viewingTreatment.description}
+                    </p>
+                    
+                    <div className="bg-black/30 p-4 rounded-xl mb-8 flex justify-between items-center border border-white/5">
+                        <div>
+                             <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Selected Tier: {locationTier}</p>
+                             <div className="flex items-center gap-2">
+                                <span className="text-2xl font-serif text-luxury-gold">${getPrice(viewingTreatment.price).toFixed(0)}</span>
+                                {locationTier !== LocationTier.STANDARD && <span className="text-[10px] text-luxury-gold/70 border border-luxury-gold/30 px-1.5 py-0.5 rounded">Surcharge Applied</span>}
+                             </div>
+                        </div>
+                        <div className="text-right">
+                             <p className="text-[10px] text-gray-500">Duration</p>
+                             <p className="text-sm text-white">{viewingTreatment.durationMin} Minutes</p>
+                        </div>
+                    </div>
+
+                    <button 
+                        onClick={() => {
+                            bookTreatment(viewingTreatment);
+                            setViewingTreatment(null);
+                        }}
+                        className="w-full bg-gradient-to-r from-luxury-gold to-yellow-600 text-black py-4 rounded font-bold uppercase tracking-widest hover:shadow-[0_0_20px_rgba(212,175,55,0.4)] transition-all transform hover:scale-[1.02]"
+                    >
+                        Add to Order — ${getPrice(viewingTreatment.price).toFixed(0)}
+                    </button>
                 </div>
             </div>
         )}

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Navigation as NavIcon, MapPin, Compass } from 'lucide-react';
+import { Navigation as NavIcon, MapPin, Compass, Mic, MicOff } from 'lucide-react';
 import { generateSpeech, getConciergeResponse, generateTourVideo } from '../services/geminiService';
 import { ChatMessage, CartItem, ItineraryItem } from '../types';
 
@@ -37,6 +37,7 @@ const WellnessChat: React.FC<WellnessChatProps> = ({ addToCart, userLocation, on
     { id: '1', role: 'model', text: `Jambo! I am your personal concierge. I see you are connecting from ${userLocation}. I can help you plan your stay, find local gems, or book activities. Try asking: "What are good sunset spots nearby?"`, timestamp: new Date() }
   ]);
   const [input, setInput] = useState('');
+  const [isListening, setIsListening] = useState(false);
   const [loading, setLoading] = useState(false);
   // Changed from boolean to string | null to track WHICH message is playing
   const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
@@ -47,6 +48,45 @@ const WellnessChat: React.FC<WellnessChatProps> = ({ addToCart, userLocation, on
   
   const audioContextRef = useRef<AudioContext | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        recognitionRef.current = new SpeechRecognition();
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
+
+        recognitionRef.current.onresult = (event: any) => {
+          const transcript = event.results[0][0].transcript;
+          setInput(prev => prev ? prev + ' ' + transcript : transcript);
+        };
+
+        recognitionRef.current.onerror = (event: any) => {
+          console.error("Speech recognition error:", event.error);
+          setIsListening(false);
+        };
+        
+        recognitionRef.current.onend = () => {
+          setIsListening(false);
+        };
+      }
+    }
+  }, []);
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+    } else {
+      try {
+        recognitionRef.current?.start();
+        setIsListening(true);
+      } catch (e) {
+        console.error("Failed to start speech recognition:", e);
+      }
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -338,13 +378,20 @@ const WellnessChat: React.FC<WellnessChatProps> = ({ addToCart, userLocation, on
                     <button onClick={() => handleQuickAction('Room Service', 50)} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-xs transition-colors" title="Room Service">🍽️</button>
                     <button onClick={() => handleQuickAction('Housekeeping', 0)} className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-xs transition-colors" title="Housekeeping">🧹</button>
                  </div>
+                 <button 
+                    onClick={toggleListening}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${isListening ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30' : 'bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white'}`}
+                    title={isListening ? "Stop listening" : "Start voice input"}
+                 >
+                    {isListening ? <MicOff size={18} className="animate-pulse" /> : <Mic size={18} />}
+                 </button>
                  <input
                     type="text"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                    placeholder="Type a message..."
-                    className="flex-1 bg-transparent border-none text-white px-4 py-3 focus:ring-0 placeholder-gray-500 font-medium"
+                    placeholder={isListening ? "Listening..." : "Type a message..."}
+                    className="flex-1 bg-transparent border-none text-white px-2 py-3 focus:ring-0 placeholder-gray-500 font-medium"
                  />
                  <button 
                     onClick={handleSend}
