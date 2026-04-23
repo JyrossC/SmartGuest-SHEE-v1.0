@@ -122,9 +122,14 @@ export const getWorkoutPlan = async (user: UserProfile, location: string) => {
     const ai = getAiClient();
     const prompt = `
       Create a detailed workout session.
-      Guest Goal: ${user.healthGoal}
-      Location: ${location}
-      Current Mood: ${user.mood}
+      Guest Profile:
+      - Age: ${user.age || 'Not specified'}
+      - Fitness Level: ${user.fitnessLevel || 'Not specified'}
+      - Goal: ${user.healthGoal}
+      - Medical Conditions/Injuries: ${user.medicalConditions ? user.medicalConditions.join(', ') : 'None'}
+      - Current Mood: ${user.mood}
+      
+      Location Context: ${location}
 
       Return a JSON object with this structure:
       {
@@ -137,7 +142,7 @@ export const getWorkoutPlan = async (user: UserProfile, location: string) => {
             "reps": "e.g. 12-15 or 'Until Failure'",
             "sets": "e.g. 3",
             "instructions": "Brief coaching cue",
-            "tip": "AI Sentinel technical correction"
+            "tip": "AI Sentinel technical correction tailored to their medical/fitness context"
           }
         ]
       }

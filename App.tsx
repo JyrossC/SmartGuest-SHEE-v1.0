@@ -52,9 +52,35 @@ const Dashboard: React.FC<{
     history: Transaction[], 
     user: UserProfile, 
     commissionRate: number,
-    symptomLogs: SymptomLogEntry[] 
-}> = ({ cart, history, user, commissionRate, symptomLogs }) => {
+    symptomLogs: SymptomLogEntry[],
+    updateUserProfile?: (updates: Partial<UserProfile>) => void
+}> = ({ cart, history, user, commissionRate, symptomLogs, updateUserProfile }) => {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editProfileData, setEditProfileData] = useState({
+      healthGoal: user.healthGoal,
+      mood: user.mood,
+      dietaryRestrictions: user.dietaryRestrictions.join(', '),
+      age: user.age ? user.age.toString() : '',
+      allergens: user.allergens ? user.allergens.join(', ') : '',
+      fitnessLevel: user.fitnessLevel || 'Beginner',
+      medicalConditions: user.medicalConditions ? user.medicalConditions.join(', ') : ''
+  });
+
+  const handleSaveProfile = () => {
+      if (updateUserProfile) {
+          updateUserProfile({
+              healthGoal: editProfileData.healthGoal,
+              mood: editProfileData.mood,
+              dietaryRestrictions: editProfileData.dietaryRestrictions.split(',').map(s => s.trim()).filter(Boolean),
+              age: editProfileData.age ? parseInt(editProfileData.age, 10) : undefined,
+              allergens: editProfileData.allergens.split(',').map(s => s.trim()).filter(Boolean),
+              fitnessLevel: editProfileData.fitnessLevel,
+              medicalConditions: editProfileData.medicalConditions.split(',').map(s => s.trim()).filter(Boolean)
+          });
+      }
+      setIsEditingProfile(false);
+  };
 
   const rooms = cart.filter(i => i.type === 'Room');
   const services = cart.filter(i => i.type === 'Service');
@@ -114,24 +140,55 @@ const Dashboard: React.FC<{
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-luxury-charcoal p-6 md:p-8 rounded-xl border border-white/5 h-full flex flex-col">
-            <h3 className="font-serif text-2xl text-white mb-6 border-b border-white/10 pb-4">Your AI Wellness Profile</h3>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-8 mb-6">
+        <div className="bg-luxury-charcoal p-6 md:p-8 rounded-xl border border-white/5 h-full flex flex-col relative">
+            <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
+                <h3 className="font-serif text-2xl text-white">Your AI Wellness Profile</h3>
+                {updateUserProfile && (
+                    <button 
+                        onClick={() => {
+                            setEditProfileData({
+                                healthGoal: user.healthGoal,
+                                mood: user.mood,
+                                dietaryRestrictions: user.dietaryRestrictions.join(', '),
+                                age: user.age ? user.age.toString() : '',
+                                allergens: user.allergens ? user.allergens.join(', ') : '',
+                                fitnessLevel: user.fitnessLevel || 'Beginner',
+                                medicalConditions: user.medicalConditions ? user.medicalConditions.join(', ') : ''
+                            });
+                            setIsEditingProfile(true);
+                        }}
+                        className="text-xs uppercase tracking-widest text-luxury-gold hover:text-white transition-colors"
+                    >
+                        Edit Profile
+                    </button>
+                )}
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-6 mb-6">
                 <div>
-                <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Current Goal</p>
-                <p className="text-base md:text-lg text-luxury-gold">{user.healthGoal}</p>
+                  <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Current Goal</p>
+                  <p className="text-sm text-luxury-gold">{user.healthGoal}</p>
                 </div>
                 <div>
-                <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Dietary Focus</p>
-                <p className="text-base md:text-lg text-luxury-gold">{user.dietaryRestrictions.join(', ')}</p>
+                  <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Detected Mood</p>
+                  <p className="text-sm text-luxury-gold">{user.mood}</p>
                 </div>
                 <div>
-                <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Detected Mood</p>
-                <p className="text-base md:text-lg text-luxury-gold">{user.mood}</p>
+                  <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Membership</p>
+                  <p className="text-sm text-luxury-gold">{user.tier} Tier</p>
                 </div>
                 <div>
-                <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Membership</p>
-                <p className="text-base md:text-lg text-luxury-gold">{user.tier} Tier</p>
+                  <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Diet / Restrictions</p>
+                  <p className="text-sm text-luxury-gold">{user.dietaryRestrictions.length ? user.dietaryRestrictions.join(', ') : 'None'}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Age & Fitness</p>
+                  <p className="text-sm text-luxury-gold">{user.age ? `${user.age} yrs` : 'N/A'} • {user.fitnessLevel || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">Medical</p>
+                  <p className="text-sm text-luxury-gold truncate" title={(user.medicalConditions || []).join(', ')}>
+                    {(user.medicalConditions || []).length ? user.medicalConditions?.join(', ') : 'None'}
+                  </p>
                 </div>
             </div>
 
@@ -286,6 +343,141 @@ const Dashboard: React.FC<{
           </div>
         </div>
       )}
+
+      {/* Profile Edit Modal */}
+      {isEditingProfile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => setIsEditingProfile(false)}>
+          <div className="bg-luxury-charcoal max-w-2xl w-full rounded-2xl border border-white/10 shadow-2xl p-8 relative max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <button 
+              onClick={() => setIsEditingProfile(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl leading-none z-10"
+            >
+              &times;
+            </button>
+            <h3 className="text-2xl font-serif text-white mb-6">Edit Wellness Profile</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left Column: General & Mindset */}
+              <div className="space-y-4">
+                <h4 className="text-luxury-gold text-sm font-bold uppercase tracking-widest mb-2 border-b border-white/5 pb-2">Lifestyle & Mindset</h4>
+                
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-widest block mb-2">Age</label>
+                  <input 
+                    type="number"
+                    min="18"
+                    max="120"
+                    placeholder="e.g. 32"
+                    className="w-full bg-white/5 border border-white/10 rounded p-3 text-white focus:border-luxury-gold outline-none"
+                    value={editProfileData.age}
+                    onChange={e => setEditProfileData(prev => ({ ...prev, age: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-widest block mb-2">Current Mood / Vibe</label>
+                  <select 
+                    className="w-full bg-white/5 border border-white/10 rounded p-3 text-white focus:border-luxury-gold outline-none"
+                    value={editProfileData.mood}
+                    onChange={e => setEditProfileData(prev => ({ ...prev, mood: e.target.value }))}
+                  >
+                    <option value="Stressed">Stressed</option>
+                    <option value="Fatigued">Fatigued</option>
+                    <option value="Energetic">Energetic</option>
+                    <option value="Anxious">Anxious</option>
+                    <option value="Calm">Calm</option>
+                    <option value="Optimistic">Optimistic</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-widest block mb-2">Health Goal</label>
+                  <select 
+                    className="w-full bg-white/5 border border-white/10 rounded p-3 text-white focus:border-luxury-gold outline-none"
+                    value={editProfileData.healthGoal}
+                    onChange={e => setEditProfileData(prev => ({ ...prev, healthGoal: e.target.value }))}
+                  >
+                    <option value="Weight Loss">Weight Loss</option>
+                    <option value="Muscle Gain">Muscle Gain</option>
+                    <option value="Relaxation & Recovery">Relaxation & Recovery</option>
+                    <option value="General Fitness">General Fitness</option>
+                    <option value="Energy Boost">Energy Boost</option>
+                    <option value="Stress Management">Stress Management</option>
+                    <option value="Holistic Wellness">Holistic Wellness</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-widest block mb-2">Fitness Level</label>
+                  <select 
+                    className="w-full bg-white/5 border border-white/10 rounded p-3 text-white focus:border-luxury-gold outline-none"
+                    value={editProfileData.fitnessLevel}
+                    onChange={e => setEditProfileData(prev => ({ ...prev, fitnessLevel: e.target.value }))}
+                  >
+                    <option value="Beginner">Beginner</option>
+                    <option value="Intermediate">Intermediate</option>
+                    <option value="Advanced">Advanced</option>
+                    <option value="Athlete">Athlete / Pro</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Right Column: Medical & Diet */}
+              <div className="space-y-4">
+                <h4 className="text-luxury-gold text-sm font-bold uppercase tracking-widest mb-2 border-b border-white/5 pb-2">Medical & Dietary</h4>
+                
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-widest block mb-2">Dietary Restrictions</label>
+                  <input 
+                    type="text" 
+                    className="w-full bg-white/5 border border-white/10 rounded p-3 text-white focus:border-luxury-gold outline-none"
+                    placeholder="e.g. Vegan, Keto, Halal"
+                    value={editProfileData.dietaryRestrictions}
+                    onChange={e => setEditProfileData(prev => ({ ...prev, dietaryRestrictions: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-widest block mb-2">Specific Allergens</label>
+                  <input 
+                    type="text" 
+                    className="w-full bg-white/5 border border-white/10 rounded p-3 text-white focus:border-luxury-gold outline-none"
+                    placeholder="e.g. Peanuts, Shellfish, Dairy"
+                    value={editProfileData.allergens}
+                    onChange={e => setEditProfileData(prev => ({ ...prev, allergens: e.target.value }))}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-gray-500 uppercase tracking-widest block mb-2">Medical Conditions / Injuries</label>
+                  <textarea 
+                    className="w-full bg-white/5 border border-white/10 rounded p-3 text-white focus:border-luxury-gold outline-none min-h-[100px] resize-none"
+                    placeholder="e.g. Asthma, Lower Back Pain, High Blood Pressure"
+                    value={editProfileData.medicalConditions}
+                    onChange={e => setEditProfileData(prev => ({ ...prev, medicalConditions: e.target.value }))}
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1">This context strictly informs AI exercise, spa, and meal curation.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex gap-4 pt-4 border-t border-white/10">
+              <button 
+                onClick={() => setIsEditingProfile(false)}
+                className="flex-[0.5] py-3 text-white border border-white/10 rounded hover:bg-white/5 font-bold tracking-wider"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSaveProfile}
+                className="flex-1 py-3 bg-luxury-gold text-black rounded font-bold uppercase tracking-wider hover:bg-white transition-colors"
+              >
+                Save Health Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -305,6 +497,10 @@ const App: React.FC = () => {
   const [inventory, setInventory] = useState<InventoryItem[]>(MOCK_INVENTORY);
   const [commissionRate, setCommissionRate] = useState<number>(10); // Default 10%
   const [symptomLogs, setSymptomLogs] = useState<SymptomLogEntry[]>(loadSymptomLogs);
+  const [excursions, setExcursions] = useState<Excursion[]>([
+      { id: 'exc1', name: 'Stone Town Cultural Tour', time: '09:00 AM', availableSlots: 15, description: 'Guided walking tour through historic Stone Town.', price: 45 },
+      { id: 'exc2', name: 'Sunset Dhow Cruise', time: '05:00 PM', availableSlots: 20, description: 'Relaxing cruise with drinks and snacks.', price: 80 }
+  ]);
 
   // FR-09: Digital DND
   const [isDND, setIsDND] = useState(false);
@@ -325,6 +521,10 @@ const App: React.FC = () => {
     spa: true,
     concierge: true
   });
+
+  const updateUserProfile = (updates: Partial<UserProfile>) => {
+    setCurrentUser(prev => prev ? { ...prev, ...updates } : null);
+  };
 
   // Checkout States
   const [isProcessing, setIsProcessing] = useState(false);
@@ -506,6 +706,8 @@ const App: React.FC = () => {
             inventory={inventory}
             setInventory={setInventory}
             markTaskComplete={markTaskComplete}
+            excursions={excursions}
+            setExcursions={setExcursions}
         />
     );
   }
@@ -514,13 +716,13 @@ const App: React.FC = () => {
   const renderGuestContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard cart={cart} history={history} user={currentUser} commissionRate={commissionRate} symptomLogs={symptomLogs} />;
+        return <Dashboard cart={cart} history={history} user={currentUser} commissionRate={commissionRate} symptomLogs={symptomLogs} updateUserProfile={updateUserProfile} />;
       case 'booking':
         return <RoomBooking addToCart={addToCart} />;
       case 'nutrition':
         return <NutritionAI addToCart={addToCart} user={currentUser || MOCK_USER} />;
       case 'fitness':
-        return <FitnessAI addToCart={addToCart} isDND={isDND} />;
+        return <FitnessAI addToCart={addToCart} isDND={isDND} user={currentUser || MOCK_USER} />;
       case 'spa':
         return <SpaWellness addToCart={addToCart} isDND={isDND} onLogSymptom={handleLogSymptom} />;
       case 'navigation':
@@ -536,7 +738,7 @@ const App: React.FC = () => {
           onNavigate={handleJumpToNavigation} 
         />;
       default:
-        return <Dashboard cart={cart} history={history} user={currentUser} commissionRate={commissionRate} symptomLogs={symptomLogs} />;
+        return <Dashboard cart={cart} history={history} user={currentUser} commissionRate={commissionRate} symptomLogs={symptomLogs} updateUserProfile={updateUserProfile} />;
     }
   };
 

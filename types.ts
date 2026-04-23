@@ -67,6 +67,10 @@ export interface UserProfile {
   healthGoal: string;
   dietaryRestrictions: string[];
   mood: string;
+  age?: number;
+  allergens?: string[];
+  fitnessLevel?: string;
+  medicalConditions?: string[];
 }
 
 export interface StaffMember {
@@ -167,6 +171,15 @@ export interface InventoryItem {
   quantity: number;
   threshold: number; // Low stock alert level
   unit: string;
+}
+
+export interface Excursion {
+  id: string;
+  name: string;
+  time: string;
+  availableSlots: number;
+  description: string;
+  price: number;
 }
 
 export interface SymptomLogEntry {

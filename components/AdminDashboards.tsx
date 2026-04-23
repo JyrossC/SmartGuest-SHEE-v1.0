@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Transaction, UserRole, UserProfile, AppFeatures, CartItem, InventoryItem, Tenant, SubscriptionPackage, StaffMember } from '../types';
+import { Transaction, UserRole, UserProfile, AppFeatures, CartItem, InventoryItem, Tenant, SubscriptionPackage, StaffMember, Excursion } from '../types';
 import { INITIAL_PACKAGES, MOCK_STAFF } from '../constants';
 
 interface DashboardProps {
@@ -15,6 +15,8 @@ interface DashboardProps {
   inventory: InventoryItem[];
   setInventory: React.Dispatch<React.SetStateAction<InventoryItem[]>>;
   markTaskComplete: (txId: string, itemId: string) => void;
+  excursions?: Excursion[];
+  setExcursions?: React.Dispatch<React.SetStateAction<Excursion[]>>;
 }
 
 const StatCard = ({ label, value, subtext, color = 'text-luxury-gold' }: { label: string, value: string, subtext?: string, color?: string }) => (
@@ -1222,8 +1224,12 @@ const HotelAdminView: React.FC<DashboardProps> = ({ history, inventory, setInven
 };
 
 // --- STAFF VIEW ---
-const StaffView: React.FC<DashboardProps> = ({ user, history, markTaskComplete }) => {
+const StaffView: React.FC<DashboardProps> = ({ user, history, markTaskComplete, excursions, setExcursions }) => {
   const [viewCompleted, setViewCompleted] = useState(false);
+  const [activeTab, setActiveTab] = useState<'Tasks' | 'Excursions'>('Tasks');
+
+  const [isExcursionModalOpen, setIsExcursionModalOpen] = useState(false);
+  const [editingExcursion, setEditingExcursion] = useState<Partial<Excursion> | null>(null);
 
   // Filter items relevant to the specific staff role
   const getRelevantItems = (): { txId: string, item: CartItem, date: string }[] => {
@@ -1251,72 +1257,219 @@ const StaffView: React.FC<DashboardProps> = ({ user, history, markTaskComplete }
 
   const tasks = getRelevantItems();
 
+  const handleSaveExcursion = () => {
+      if (!editingExcursion?.name || !editingExcursion?.time || !setExcursions || !excursions) return;
+      if (editingExcursion.id) {
+          setExcursions(prev => prev.map(e => e.id === editingExcursion.id ? { ...e, ...editingExcursion } as Excursion : e));
+      } else {
+          const newExcursion: Excursion = {
+              id: `exc_${Date.now()}`,
+              name: editingExcursion.name,
+              time: editingExcursion.time,
+              availableSlots: editingExcursion.availableSlots || 10,
+              description: editingExcursion.description || '',
+              price: editingExcursion.price || 0
+          };
+          setExcursions(prev => [...prev, newExcursion]);
+      }
+      setIsExcursionModalOpen(false);
+      setEditingExcursion(null);
+  };
+
+  const handleDeleteExcursion = (id: string) => {
+      if (!setExcursions) return;
+      setExcursions(prev => prev.filter(e => e.id !== id));
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
-      <header className="mb-8 flex flex-col md:flex-row justify-between md:items-center gap-4">
+      <header className="mb-0 flex flex-col md:flex-row justify-between md:items-center gap-4">
         <div>
             <h2 className="font-serif text-3xl text-luxury-gold">{user.role} Portal</h2>
             <p className="text-gray-400">Welcome back, {user.name}</p>
         </div>
-        <div className="flex items-center gap-4">
-            <div className="text-xs uppercase tracking-widest text-gray-500">View Mode</div>
-            <button 
-                onClick={() => setViewCompleted(!viewCompleted)}
-                className={`px-4 py-2 rounded border text-xs font-bold uppercase tracking-wider transition-colors ${
-                    viewCompleted 
-                    ? 'bg-green-500/20 text-green-400 border-green-500/50' 
-                    : 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
-                }`}
-            >
-                {viewCompleted ? 'Viewing Completed' : 'Viewing Active Tasks'}
-            </button>
-        </div>
-      </header>
-
-      <div className="bg-luxury-charcoal rounded-xl border border-white/5 overflow-hidden min-h-[400px]">
-        <div className="p-4 bg-black/20 border-b border-white/5 flex justify-between">
-            <h3 className="text-white font-bold">{viewCompleted ? 'Completed History' : 'Pending Requests'}</h3>
-            <span className="text-luxury-gold font-bold">{tasks.length}</span>
-        </div>
-        {tasks.length === 0 ? (
-            <div className="p-12 text-center text-gray-500 flex flex-col items-center justify-center h-full mt-10">
-                <span className="text-4xl block mb-4 opacity-50">{viewCompleted ? '📂' : '✅'}</span>
-                <p>No {viewCompleted ? 'completed' : 'pending'} items found.</p>
-            </div>
-        ) : (
-            <div className="divide-y divide-white/5">
-                {tasks.map((task, idx) => (
-                    <div key={`${task.txId}-${idx}`} className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between hover:bg-white/5 transition-colors group gap-4">
-                        <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-1">
-                                <span className={`text-xs px-2 py-0.5 rounded uppercase font-bold ${viewCompleted ? 'bg-green-500/20 text-green-500' : 'bg-orange-500/20 text-orange-500'}`}>
-                                    {viewCompleted ? 'Done' : 'Pending'}
-                                </span>
-                                <span className="text-xs font-mono text-gray-500">#{task.txId}</span>
-                            </div>
-                            <p className={`text-white text-lg font-bold ${viewCompleted ? 'line-through text-gray-500' : ''}`}>{task.item.name}</p>
-                            <p className="text-xs text-gray-400 mt-1 flex items-center gap-2">
-                                <span>📅 {new Date(task.date).toLocaleString()}</span>
-                                {task.item.details && <span className="text-luxury-gold">• {task.item.details}</span>}
-                            </p>
-                        </div>
-                        
-                        {!viewCompleted && (
-                            <button 
-                                onClick={() => markTaskComplete(task.txId, task.item.id)}
-                                className="w-full md:w-auto bg-luxury-gold text-black px-6 py-3 rounded font-bold uppercase tracking-widest hover:bg-white transition-colors shadow-lg hover:shadow-luxury-gold/50"
-                            >
-                                Mark Done
-                            </button>
-                        )}
-                        {viewCompleted && (
-                             <span className="hidden md:block text-2xl text-green-500 opacity-50 group-hover:opacity-100 transition-opacity">✓</span>
-                        )}
-                    </div>
-                ))}
+        
+        {user.role === UserRole.CONCIERGE && (
+            <div className="flex bg-white/5 p-1 rounded-lg border border-white/5">
+                <button 
+                  onClick={() => setActiveTab('Tasks')}
+                  className={`px-4 py-2 rounded text-xs font-bold uppercase tracking-wider transition-colors ${activeTab === 'Tasks' ? 'bg-luxury-gold text-black' : 'text-gray-400 hover:text-white'}`}
+                >
+                    Incoming Tasks
+                </button>
+                <button 
+                  onClick={() => setActiveTab('Excursions')}
+                  className={`px-4 py-2 rounded text-xs font-bold uppercase tracking-wider transition-colors ${activeTab === 'Excursions' ? 'bg-luxury-gold text-black' : 'text-gray-400 hover:text-white'}`}
+                >
+                    Daily Excursions
+                </button>
             </div>
         )}
-      </div>
+      </header>
+
+      {activeTab === 'Tasks' && (
+      <>
+          <div className="flex items-center justify-end gap-4">
+              <div className="text-xs uppercase tracking-widest text-gray-500">View Mode</div>
+              <button 
+                  onClick={() => setViewCompleted(!viewCompleted)}
+                  className={`px-4 py-2 rounded border text-xs font-bold uppercase tracking-wider transition-colors ${
+                      viewCompleted 
+                      ? 'bg-green-500/20 text-green-400 border-green-500/50' 
+                      : 'bg-white/5 text-gray-300 border-white/10 hover:bg-white/10'
+                  }`}
+              >
+                  {viewCompleted ? 'Viewing Completed' : 'Viewing Active Tasks'}
+              </button>
+          </div>
+
+          <div className="bg-luxury-charcoal rounded-xl border border-white/5 overflow-hidden min-h-[400px]">
+            <div className="p-4 bg-black/20 border-b border-white/5 flex justify-between">
+                <h3 className="text-white font-bold">{viewCompleted ? 'Completed History' : 'Pending Requests'}</h3>
+                <span className="text-luxury-gold font-bold">{tasks.length}</span>
+            </div>
+            {tasks.length === 0 ? (
+                <div className="p-12 text-center text-gray-500 flex flex-col items-center justify-center h-full mt-10">
+                    <span className="text-4xl block mb-4 opacity-50">{viewCompleted ? '📂' : '✅'}</span>
+                    <p>No {viewCompleted ? 'completed' : 'pending'} items found.</p>
+                </div>
+            ) : (
+                <div className="divide-y divide-white/5">
+                    {tasks.map((task, idx) => (
+                        <div key={`${task.txId}-${idx}`} className="p-4 md:p-6 flex flex-col md:flex-row md:items-center justify-between hover:bg-white/5 transition-colors group gap-4">
+                            <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-1">
+                                    <span className={`text-xs px-2 py-0.5 rounded uppercase font-bold ${viewCompleted ? 'bg-green-500/20 text-green-500' : 'bg-orange-500/20 text-orange-500'}`}>
+                                        {viewCompleted ? 'Done' : 'Pending'}
+                                    </span>
+                                    <span className="text-xs font-mono text-gray-500">#{task.txId}</span>
+                                </div>
+                                <p className={`text-white text-lg font-bold ${viewCompleted ? 'line-through text-gray-500' : ''}`}>{task.item.name}</p>
+                                <p className="text-xs text-gray-400 mt-1 flex items-center gap-2">
+                                    <span>📅 {new Date(task.date).toLocaleString()}</span>
+                                    {task.item.details && <span className="text-luxury-gold">• {task.item.details}</span>}
+                                </p>
+                            </div>
+                            
+                            {!viewCompleted && (
+                                <button 
+                                    onClick={() => markTaskComplete(task.txId, task.item.id)}
+                                    className="w-full md:w-auto bg-luxury-gold text-black px-6 py-3 rounded font-bold uppercase tracking-widest hover:bg-white transition-colors shadow-lg hover:shadow-luxury-gold/50"
+                                >
+                                    Mark Done
+                                </button>
+                            )}
+                            {viewCompleted && (
+                                 <span className="hidden md:block text-2xl text-green-500 opacity-50 group-hover:opacity-100 transition-opacity">✓</span>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+          </div>
+      </>
+      )}
+
+      {activeTab === 'Excursions' && excursions && setExcursions && (
+          <div className="bg-luxury-charcoal p-6 md:p-8 rounded-xl border border-white/5">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-serif text-2xl text-white">Daily Excursions</h3>
+                <button 
+                  onClick={() => {
+                      setEditingExcursion({ name: '', time: '', description: '', availableSlots: 10, price: 0 });
+                      setIsExcursionModalOpen(true);
+                  }}
+                  className="bg-luxury-gold text-black px-4 py-2 rounded text-xs font-bold uppercase tracking-wider hover:bg-white transition-colors"
+                >
+                    + Add New Tour
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                 {excursions.map(exc => (
+                     <div key={exc.id} className="bg-white/5 border border-white/10 rounded-xl p-6 hover:border-luxury-gold/30 transition-all flex flex-col">
+                         <div className="flex justify-between items-start mb-2">
+                            <h4 className="text-xl font-bold text-luxury-gold">{exc.name}</h4>
+                            <span className="text-xs font-mono bg-black/40 px-2 py-1 rounded text-gray-300 border border-white/5">{exc.time}</span>
+                         </div>
+                         <p className="text-sm text-gray-400 flex-1 mb-4">{exc.description}</p>
+                         <div className="flex justify-between items-center text-sm mb-4">
+                             <div className="flex space-x-4">
+                                <span className="text-gray-300">Slots: <span className="font-bold text-white">{exc.availableSlots}</span></span>
+                                <span className="text-gray-300">Price: <span className="font-bold text-white">${exc.price}</span></span>
+                             </div>
+                         </div>
+                         <div className="grid grid-cols-2 gap-2 mt-auto">
+                            <button 
+                              onClick={() => {
+                                  setEditingExcursion(exc);
+                                  setIsExcursionModalOpen(true);
+                              }}
+                              className="py-2 border border-white/10 rounded text-xs uppercase font-bold text-white hover:bg-white/5"
+                            >
+                                Edit
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteExcursion(exc.id)}
+                              className="py-2 border border-red-500/30 rounded text-xs uppercase font-bold text-red-400 hover:bg-red-500/10"
+                            >
+                                Delete
+                            </button>
+                         </div>
+                     </div>
+                 ))}
+                 {excursions.length === 0 && (
+                     <div className="col-span-1 lg:col-span-2 text-center p-12 bg-white/5 rounded-xl border border-dashed border-white/10 text-gray-500">
+                         No excursions planned. Add one to offer to guests.
+                     </div>
+                 )}
+              </div>
+          </div>
+      )}
+
+      {/* Edit Excursion Modal */}
+      {isExcursionModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={() => setIsExcursionModalOpen(false)}>
+              <div className="bg-luxury-charcoal max-w-lg w-full rounded-2xl border border-luxury-gold shadow-2xl overflow-hidden p-8" onClick={e => e.stopPropagation()}>
+                  <h3 className="font-serif text-2xl text-white mb-6 uppercase tracking-widest">
+                      {editingExcursion?.id ? 'Edit Excursion' : 'New Excursion'}
+                  </h3>
+                  <div className="space-y-4">
+                      <div>
+                          <label className="text-xs text-gray-500 uppercase font-bold">Tour Name</label>
+                          <input type="text" className="w-full bg-white/5 border border-white/10 rounded p-3 text-white focus:border-luxury-gold outline-none mt-1" 
+                              value={editingExcursion?.name || ''} onChange={e => setEditingExcursion(prev => ({...prev, name: e.target.value}))} />
+                      </div>
+                      <div>
+                          <label className="text-xs text-gray-500 uppercase font-bold">Time (e.g. 09:00 AM)</label>
+                          <input type="text" className="w-full bg-white/5 border border-white/10 rounded p-3 text-white focus:border-luxury-gold outline-none mt-1" 
+                              value={editingExcursion?.time || ''} onChange={e => setEditingExcursion(prev => ({...prev, time: e.target.value}))} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                          <div>
+                              <label className="text-xs text-gray-500 uppercase font-bold">Total Slots</label>
+                              <input type="number" className="w-full bg-white/5 border border-white/10 rounded p-3 text-white focus:border-luxury-gold outline-none mt-1" 
+                                  value={editingExcursion?.availableSlots || 0} onChange={e => setEditingExcursion(prev => ({...prev, availableSlots: parseInt(e.target.value)}))} />
+                          </div>
+                          <div>
+                              <label className="text-xs text-gray-500 uppercase font-bold">Price ($)</label>
+                              <input type="number" className="w-full bg-white/5 border border-white/10 rounded p-3 text-white focus:border-luxury-gold outline-none mt-1" 
+                                  value={editingExcursion?.price || 0} onChange={e => setEditingExcursion(prev => ({...prev, price: parseInt(e.target.value)}))} />
+                          </div>
+                      </div>
+                      <div>
+                          <label className="text-xs text-gray-500 uppercase font-bold">Description</label>
+                          <textarea className="w-full bg-white/5 border border-white/10 rounded p-3 text-white focus:border-luxury-gold outline-none mt-1 min-h-[100px] resize-none" 
+                              value={editingExcursion?.description || ''} onChange={e => setEditingExcursion(prev => ({...prev, description: e.target.value}))} />
+                      </div>
+                  </div>
+                  <div className="flex gap-4 mt-8">
+                      <button onClick={() => setIsExcursionModalOpen(false)} className="flex-1 py-3 border border-gray-600 rounded hover:bg-white/5 text-gray-300">Cancel</button>
+                      <button onClick={handleSaveExcursion} className="flex-1 py-3 bg-luxury-gold text-black font-bold rounded hover:bg-white uppercase tracking-wider">Save Tour</button>
+                  </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 };

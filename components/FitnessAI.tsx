@@ -32,6 +32,7 @@ function cn(...inputs: ClassValue[]) {
 interface FitnessAIProps {
   addToCart: (item: CartItem) => void;
   isDND: boolean;
+  user: UserProfile;
 }
 
 const LIVE_TIPS = [
@@ -58,7 +59,7 @@ interface ExercisePlan {
   }[];
 }
 
-const FitnessAI: React.FC<FitnessAIProps> = ({ addToCart, isDND }) => {
+const FitnessAI: React.FC<FitnessAIProps> = ({ addToCart, isDND, user }) => {
   const [location, setLocation] = useState<'In-Room' | 'Gym'>('Gym');
   const [tier, setTier] = useState<LocationTier>(LocationTier.STANDARD);
   const [selectedEquipment, setSelectedEquipment] = useState<string[]>(['eq1']);
@@ -140,7 +141,7 @@ const FitnessAI: React.FC<FitnessAIProps> = ({ addToCart, isDND }) => {
     try {
       const equipNames = FITNESS_EQUIPMENT.filter(e => selectedEquipment.includes(e.id)).map(e => e.name).join(', ');
       const context = tier === LocationTier.PRIVATE ? 'Private Facility' : location;
-      const result = await getWorkoutPlan(MOCK_USER, `${context} ${location === 'In-Room' ? `with ${equipNames}` : ''}`);
+      const result = await getWorkoutPlan(user, `${context} ${location === 'In-Room' ? `with ${equipNames}` : ''}`);
       setPlan(result);
     } catch (e) {
       console.error(e);

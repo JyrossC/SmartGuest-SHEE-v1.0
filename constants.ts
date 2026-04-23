@@ -7,7 +7,11 @@ export const MOCK_USER = {
   tier: UserTier.ROYAL,
   healthGoal: "Muscle Gain & Stress Reduction",
   dietaryRestrictions: ["Gluten Free"],
-  mood: "Exhausted"
+  mood: "Exhausted",
+  age: 32,
+  allergens: ["Peanuts", "Shellfish"],
+  fitnessLevel: "Intermediate",
+  medicalConditions: ["Mild Asthma"]
 };
 
 export const INITIAL_PACKAGES: SubscriptionPackage[] = [
