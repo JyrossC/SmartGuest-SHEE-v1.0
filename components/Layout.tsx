@@ -20,11 +20,12 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, setActiveTab, user
   const navItems = [
     { id: 'dashboard', label: 'Home', icon: 'Squares2X2Icon', emoji: '🏠', enabled: true },
     { id: 'booking', label: 'Suites', icon: 'HomeModernIcon', emoji: '🛏️', enabled: true },
+    { id: 'experiences', label: 'Experiences', icon: 'StarIcon', emoji: '✨', enabled: enabledFeatures.concierge },
     { id: 'nutrition', label: 'Dining', icon: 'CakeIcon', emoji: '🥗', enabled: enabledFeatures.nutrition },
     { id: 'fitness', label: 'Fitness', icon: 'BoltIcon', emoji: '💪', enabled: enabledFeatures.fitness },
     {id: 'spa', label: 'Wellness', icon: 'SparklesIcon', emoji: '🌿', enabled: enabledFeatures.spa },
     { id: 'navigation', label: 'Navigator', icon: 'MapIcon', emoji: '🧭', enabled: true },
-    { id: 'concierge', label: 'Concierge', icon: 'ChatBubbleLeftRightIcon', emoji: '🛎️', enabled: enabledFeatures.concierge },
+    { id: 'concierge', label: 'AI Concierge', icon: 'ChatBubbleLeftRightIcon', emoji: '🛎️', enabled: enabledFeatures.concierge },
   ];
 
   const canUseDND = userTier === UserTier.VIP || userTier === UserTier.VVIP || userTier === UserTier.ROYAL;

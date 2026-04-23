@@ -162,21 +162,24 @@ export const TECH_AMENITIES: TechAmenity[] = [
         name: 'Oculus Meditation VR',
         description: 'Immersive guided meditation in virtual landscapes.',
         pricePerDay: 40,
-        imageUrl: 'https://picsum.photos/300/200?random=20'
+        imageUrl: 'https://picsum.photos/300/200?random=20',
+        status: 'Available'
     },
     {
         id: 't2',
         name: 'Neuro-Sonic Sleep Pod',
         description: 'Portable cranial stimulation device to cure jetlag.',
         pricePerDay: 60,
-        imageUrl: 'https://picsum.photos/300/200?random=21'
+        imageUrl: 'https://picsum.photos/300/200?random=21',
+        status: 'Available'
     },
     {
         id: 't3',
         name: 'Hypervolt Massage Gun',
         description: 'Professional grade percussion therapy device.',
         pricePerDay: 25,
-        imageUrl: 'https://picsum.photos/300/200?random=22'
+        imageUrl: 'https://picsum.photos/300/200?random=22',
+        status: 'Maintenance'
     }
 ];
 

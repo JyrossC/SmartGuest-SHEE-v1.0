@@ -17,6 +17,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin, onBack, initialMode 
     { name: "Chef Gordon", role: UserRole.CHEF, tier: UserTier.NORMAL, healthGoal: "-", dietaryRestrictions: [], mood: "-" },
     { name: "Coach Mike", role: UserRole.TRAINER, tier: UserTier.NORMAL, healthGoal: "-", dietaryRestrictions: [], mood: "-" },
     { name: "Sarah (Spa)", role: UserRole.SPA_MANAGER, tier: UserTier.NORMAL, healthGoal: "-", dietaryRestrictions: [], mood: "-" },
+    { name: "James (Concierge)", role: UserRole.CONCIERGE, tier: UserTier.NORMAL, healthGoal: "-", dietaryRestrictions: [], mood: "-" },
   ];
 
   const guestPersona: UserProfile = {
@@ -150,6 +151,7 @@ const getIcon = (role: UserRole) => {
     case UserRole.CHEF: return '👨‍🍳';
     case UserRole.TRAINER: return '💪';
     case UserRole.SPA_MANAGER: return '🌿';
+    case UserRole.CONCIERGE: return '🛎️';
     case UserRole.GUEST: return '👤';
     default: return '👔';
   }

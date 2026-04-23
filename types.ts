@@ -110,6 +110,7 @@ export interface TechAmenity {
   description: string;
   pricePerDay: number;
   imageUrl: string;
+  status?: 'Available' | 'Rented' | 'Maintenance';
 }
 
 export interface Room {

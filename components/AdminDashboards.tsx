@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Transaction, UserRole, UserProfile, AppFeatures, CartItem, InventoryItem, Tenant, SubscriptionPackage, StaffMember, Excursion } from '../types';
+import { Transaction, UserRole, UserProfile, AppFeatures, CartItem, InventoryItem, Tenant, SubscriptionPackage, StaffMember, Excursion, TechAmenity } from '../types';
 import { INITIAL_PACKAGES, MOCK_STAFF } from '../constants';
 
 interface DashboardProps {
@@ -17,6 +17,8 @@ interface DashboardProps {
   markTaskComplete: (txId: string, itemId: string) => void;
   excursions?: Excursion[];
   setExcursions?: React.Dispatch<React.SetStateAction<Excursion[]>>;
+  techRentals?: TechAmenity[];
+  setTechRentals?: React.Dispatch<React.SetStateAction<TechAmenity[]>>;
 }
 
 const StatCard = ({ label, value, subtext, color = 'text-luxury-gold' }: { label: string, value: string, subtext?: string, color?: string }) => (
@@ -1223,10 +1225,9 @@ const HotelAdminView: React.FC<DashboardProps> = ({ history, inventory, setInven
   );
 };
 
-// --- STAFF VIEW ---
-const StaffView: React.FC<DashboardProps> = ({ user, history, markTaskComplete, excursions, setExcursions }) => {
+const StaffView: React.FC<DashboardProps> = ({ user, history, markTaskComplete, excursions, setExcursions, techRentals, setTechRentals }) => {
   const [viewCompleted, setViewCompleted] = useState(false);
-  const [activeTab, setActiveTab] = useState<'Tasks' | 'Excursions'>('Tasks');
+  const [activeTab, setActiveTab] = useState<'Tasks' | 'Excursions' | 'TechRentals'>('Tasks');
 
   const [isExcursionModalOpen, setIsExcursionModalOpen] = useState(false);
   const [editingExcursion, setEditingExcursion] = useState<Partial<Excursion> | null>(null);
@@ -1242,7 +1243,7 @@ const StaffView: React.FC<DashboardProps> = ({ user, history, markTaskComplete, 
         if (user.role === UserRole.CHEF && item.type === 'Food') isRelevant = true;
         if (user.role === UserRole.TRAINER && item.type === 'Service' && (item.name.includes('Gym') || item.name.includes('Trainer') || item.name.includes('Yoga'))) isRelevant = true;
         if (user.role === UserRole.SPA_MANAGER && item.type === 'Service' && (item.name.includes('Spa') || item.name.includes('Massage'))) isRelevant = true;
-        if (user.role === UserRole.CONCIERGE && item.type === 'Service' && (item.name.includes('Tour') || item.name.includes('Towel') || item.name.includes('Cleaning'))) isRelevant = true;
+        if (user.role === UserRole.CONCIERGE && item.type === 'Service' && (item.name.includes('Tour') || item.name.includes('Towel') || item.name.includes('Cleaning') || item.name.includes('Rental'))) isRelevant = true; // Added Rental
         
         // Status Logic
         const isCompleted = item.status === 'Completed';
@@ -1281,6 +1282,13 @@ const StaffView: React.FC<DashboardProps> = ({ user, history, markTaskComplete, 
       setExcursions(prev => prev.filter(e => e.id !== id));
   };
 
+  const cycleTechStatus = (id: string, currentStatus: string = 'Available') => {
+      if (!setTechRentals) return;
+      const statuses: Array<'Available' | 'Rented' | 'Maintenance'> = ['Available', 'Rented', 'Maintenance'];
+      const nextIdx = (statuses.indexOf(currentStatus as any) + 1) % statuses.length;
+      setTechRentals(prev => prev.map(t => t.id === id ? { ...t, status: statuses[nextIdx] } : t));
+  };
+
   return (
     <div className="space-y-8 animate-fade-in">
       <header className="mb-0 flex flex-col md:flex-row justify-between md:items-center gap-4">
@@ -1290,7 +1298,7 @@ const StaffView: React.FC<DashboardProps> = ({ user, history, markTaskComplete, 
         </div>
         
         {user.role === UserRole.CONCIERGE && (
-            <div className="flex bg-white/5 p-1 rounded-lg border border-white/5">
+            <div className="flex bg-white/5 p-1 rounded-lg border border-white/5 flex-wrap">
                 <button 
                   onClick={() => setActiveTab('Tasks')}
                   className={`px-4 py-2 rounded text-xs font-bold uppercase tracking-wider transition-colors ${activeTab === 'Tasks' ? 'bg-luxury-gold text-black' : 'text-gray-400 hover:text-white'}`}
@@ -1302,6 +1310,12 @@ const StaffView: React.FC<DashboardProps> = ({ user, history, markTaskComplete, 
                   className={`px-4 py-2 rounded text-xs font-bold uppercase tracking-wider transition-colors ${activeTab === 'Excursions' ? 'bg-luxury-gold text-black' : 'text-gray-400 hover:text-white'}`}
                 >
                     Daily Excursions
+                </button>
+                <button 
+                  onClick={() => setActiveTab('TechRentals')}
+                  className={`px-4 py-2 rounded text-xs font-bold uppercase tracking-wider transition-colors ${activeTab === 'TechRentals' ? 'bg-luxury-gold text-black' : 'text-gray-400 hover:text-white'}`}
+                >
+                    Tech Rentals
                 </button>
             </div>
         )}
@@ -1423,6 +1437,43 @@ const StaffView: React.FC<DashboardProps> = ({ user, history, markTaskComplete, 
                          No excursions planned. Add one to offer to guests.
                      </div>
                  )}
+              </div>
+          </div>
+      )}
+
+      {activeTab === 'TechRentals' && techRentals && setTechRentals && (
+          <div className="bg-luxury-charcoal p-6 md:p-8 rounded-xl border border-white/5">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-serif text-2xl text-white">Wellness Tech Fleet</h3>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                 {techRentals.map(tech => (
+                     <div key={tech.id} className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-luxury-gold/30 transition-all flex flex-col">
+                         <div className="h-40 bg-black relative">
+                            <img src={tech.imageUrl} alt={tech.name} className="w-full h-full object-cover opacity-60" />
+                            <div className="absolute top-2 right-2 flex gap-1">
+                                <button
+                                    onClick={() => cycleTechStatus(tech.id, tech.status)}
+                                    className={`px-3 py-1 text-[10px] uppercase font-bold tracking-widest rounded shadow-lg transition-colors ${
+                                        tech.status === 'Available' ? 'bg-green-500 text-black' :
+                                        tech.status === 'Rented' ? 'bg-orange-500 text-black' :
+                                        'bg-red-500 text-black'
+                                    }`}
+                                >
+                                    {tech.status || 'Available'}
+                                </button>
+                            </div>
+                         </div>
+                         <div className="p-4 flex flex-col flex-1">
+                             <h4 className="font-bold text-luxury-gold mb-1">{tech.name}</h4>
+                             <p className="text-xs text-gray-400 mb-4 flex-1">{tech.description}</p>
+                             <div className="flex justify-between items-center pt-2 border-t border-white/5 mt-auto">
+                                <span className="text-sm font-bold text-white">${tech.pricePerDay} <span className="text-gray-500 text-xs font-normal">/ day</span></span>
+                             </div>
+                         </div>
+                     </div>
+                 ))}
               </div>
           </div>
       )}

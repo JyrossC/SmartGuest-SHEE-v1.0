@@ -11,8 +11,9 @@ import AdminDashboards from './components/AdminDashboards';
 import SpaWellness from './components/SpaWellness';
 import WeatherWidget from './components/WeatherWidget';
 import NavigationModule from './components/NavigationModule';
-import { MOCK_USER, MOCK_INVENTORY } from './constants';
-import { CartItem, UserTier, Transaction, UserProfile, UserRole, AppFeatures, InventoryItem, SymptomLogEntry } from './types';
+import GuestExperiences from './components/GuestExperiences';
+import { MOCK_USER, MOCK_INVENTORY, TECH_AMENITIES } from './constants';
+import { CartItem, UserTier, Transaction, UserProfile, UserRole, AppFeatures, InventoryItem, SymptomLogEntry, Excursion, TechAmenity } from './types';
 
 // Helper to safely load cart from storage
 const loadCart = (): CartItem[] => {
@@ -501,6 +502,7 @@ const App: React.FC = () => {
       { id: 'exc1', name: 'Stone Town Cultural Tour', time: '09:00 AM', availableSlots: 15, description: 'Guided walking tour through historic Stone Town.', price: 45 },
       { id: 'exc2', name: 'Sunset Dhow Cruise', time: '05:00 PM', availableSlots: 20, description: 'Relaxing cruise with drinks and snacks.', price: 80 }
   ]);
+  const [techRentals, setTechRentals] = useState<TechAmenity[]>(TECH_AMENITIES);
 
   // FR-09: Digital DND
   const [isDND, setIsDND] = useState(false);
@@ -708,6 +710,8 @@ const App: React.FC = () => {
             markTaskComplete={markTaskComplete}
             excursions={excursions}
             setExcursions={setExcursions}
+            techRentals={techRentals}
+            setTechRentals={setTechRentals}
         />
     );
   }
@@ -717,6 +721,8 @@ const App: React.FC = () => {
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard cart={cart} history={history} user={currentUser} commissionRate={commissionRate} symptomLogs={symptomLogs} updateUserProfile={updateUserProfile} />;
+      case 'experiences':
+        return <GuestExperiences excursions={excursions} techRentals={techRentals} addToCart={addToCart} />;
       case 'booking':
         return <RoomBooking addToCart={addToCart} />;
       case 'nutrition':
