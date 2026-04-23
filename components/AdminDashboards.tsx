@@ -96,14 +96,30 @@ const getMockActivity = (tenantId: string) => {
 };
 
 // --- SUPER ADMIN (SAAS OWNER) ---
-const SuperAdminView: React.FC<DashboardProps> = () => {
+const SuperAdminView: React.FC<DashboardProps> = (props) => {
+  const { history, features, toggleFeature, commissionRate, setCommissionRate, inventory } = props;
   const [activeAdminTab, setActiveAdminTab] = useState<'tenants' | 'packages'>('tenants');
   
-  // Tenants State with Persistence
+  // Real-time live revenue calculation for the main platform instance (Zanzibar)
+  const getLiveRevenue = () => history.reduce((sum, t) => sum + t.total, 0);
+
+  // Tenants State with Persistence and Live Data Injection
   const [tenants, setTenants] = useState<Tenant[]>(() => {
       try {
           const saved = localStorage.getItem('shee_tenants');
-          return saved ? JSON.parse(saved) : INITIAL_TENANTS;
+          const parsed = saved ? JSON.parse(saved) : INITIAL_TENANTS;
+          // Ensure T-001 runs on the live app environment settings
+          return parsed.map((t: Tenant) => {
+              if (t.id === 'T-001') {
+                  return {
+                      ...t,
+                      commissionRate: commissionRate,
+                      features: features,
+                      totalRevenue: getLiveRevenue() || t.totalRevenue // Use live revenue or existing if 0
+                  };
+              }
+              return t;
+          });
       } catch (e) {
           return INITIAL_TENANTS;
       }
@@ -129,13 +145,49 @@ const SuperAdminView: React.FC<DashboardProps> = () => {
       localStorage.setItem('shee_tenants', JSON.stringify(tenants));
   }, [tenants]);
 
+  // Keep T-001 perfectly synchronized with any live app data changes
+  useEffect(() => {
+     setTenants(prev => prev.map(t => {
+         if (t.id === 'T-001') {
+             return { ...t, commissionRate, features, totalRevenue: getLiveRevenue() };
+         }
+         return t;
+     }));
+     // Also sync selected tenant if it's T-001
+     setSelectedTenant(prev => {
+         if (prev && prev.id === 'T-001') {
+             return { ...prev, commissionRate, features, totalRevenue: getLiveRevenue() };
+         }
+         return prev;
+     });
+  }, [history, features, commissionRate]);
+
   // Stats Calculation
   const totalSystemRevenue = tenants.reduce((acc, t) => acc + t.totalRevenue, 0);
   const totalCommissionRevenue = tenants.reduce((acc, t) => acc + (t.totalRevenue * (t.commissionRate / 100)), 0);
   const activeTenants = tenants.filter(t => t.status === 'Active').length;
 
-  // ... (Code for SuperAdminView CRUD logic omitted for brevity as it's not the requested change, keeping it consistent)
-  
+  // Real-time activity generation based on actual history & inventory for T-001
+  const getDynamicActivity = (tenantId: string) => {
+      if (tenantId !== 'T-001') return getMockActivity(tenantId);
+      
+      const liveActivities: any[] = [];
+      // Alert from Live Inventory
+      inventory.forEach(item => {
+          if (item.quantity <= item.threshold) {
+             liveActivities.push({ time: "Just now", action: `Inventory Alert: ${item.name}`, val: "Low Stock", isAlert: true });
+          }
+      });
+      // Recent transactions
+      history.slice(0, 5).forEach(tx => {
+         const timeDiff = Math.floor((new Date().getTime() - new Date(tx.date).getTime()) / 60000); // mins
+         const timeStr = timeDiff === 0 ? "Just now" : timeDiff < 60 ? `${timeDiff} mins ago` : `${Math.floor(timeDiff/60)} hours ago`;
+         liveActivities.push({ time: timeStr, action: `New Order: ${tx.items.length} items`, val: `+$${tx.total.toFixed(2)}` });
+      });
+      
+      return liveActivities.length > 0 ? liveActivities : getMockActivity(tenantId);
+  };
+
   // --- CRUD LOGIC: TENANTS ---
 
   const handleSaveTenant = () => {
@@ -148,6 +200,10 @@ const SuperAdminView: React.FC<DashboardProps> = () => {
           // UPDATE
           setTenants(prev => prev.map(t => t.id === editingTenant.id ? { ...t, ...editingTenant } as Tenant : t));
           if(selectedTenant?.id === editingTenant.id) setSelectedTenant({ ...selectedTenant, ...editingTenant } as Tenant);
+          
+          if (editingTenant.id === 'T-001' && editingTenant.commissionRate) {
+              setCommissionRate(editingTenant.commissionRate);
+          }
       } else {
           // CREATE
           const newTenant: Tenant = {
@@ -186,6 +242,12 @@ const SuperAdminView: React.FC<DashboardProps> = () => {
   };
 
   const updateTenantFeature = (tenantId: string, feature: keyof AppFeatures) => {
+      // If it's the live app tenant (T-001), update the global system flags!
+      if (tenantId === 'T-001') {
+          toggleFeature(feature);
+          return;
+      }
+
       setTenants(prev => prev.map(t => {
           if (t.id === tenantId) {
               return { ...t, features: { ...t.features, [feature]: !t.features[feature] } };
@@ -198,6 +260,10 @@ const SuperAdminView: React.FC<DashboardProps> = () => {
   };
 
   const updateTenantCommission = (tenantId: string, newRate: number) => {
+      if (tenantId === 'T-001') {
+          setCommissionRate(newRate);
+          return;
+      }
       setTenants(prev => prev.map(t => 
           t.id === tenantId ? { ...t, commissionRate: newRate } : t
       ));
@@ -438,7 +504,7 @@ const SuperAdminView: React.FC<DashboardProps> = () => {
                                 <div className="bg-white/5 rounded-xl p-6 border border-white/5">
                                     <h4 className="text-sm font-bold text-white mb-4 uppercase tracking-widest">Recent Activity Log</h4>
                                     <div className="space-y-0">
-                                        {getMockActivity(selectedTenant.id).map((log, idx) => (
+                                        {getDynamicActivity(selectedTenant.id).map((log, idx) => (
                                             <div key={idx} className="flex justify-between items-center py-3 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 -mx-2 rounded transition-colors">
                                                 <div>
                                                     <p className={`text-sm font-bold ${log.isAlert ? 'text-red-400' : 'text-gray-300'}`}>{log.action}</p>
